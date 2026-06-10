@@ -1,187 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
-    <title>HTML Compiler</title>
-
-    <style type="text/css"> 
-        body { overflow:hidden; margin:0;  }
-
-        .Input #editor::-webkit-scrollbar{
-            width:thin;
-        }
-        .Input #editor::-webkit-scrollbar-thumb {
-            background:red
-        }
-
-        .Input #editor { 
-            scrollbar-color: rgba(224, 224, 224, 0.67) rgba(237, 237, 237, 1);
-            position:absolute;
-            bottom:0;
-            left:0;
-            right:20%;
-            font-weight: normal;
-            color:rgba(18, 18, 18, 0.98);
-            scrollbar-width: thin;
-        }
-
-        .same { 
-            top:0;   
-        }   
-
-        .output{ 
-            position:absolute;
-            left:80%;
-            right:0; 
-            bottom:0; 
-            box-shadow: -3px 2px 20px 0px hsla(0, 0%, 80%, 0.82); 
-            border-left:inset 10px rgba(255, 255, 255, 0); 
-            touch-action: none;
-            box-sizing: border-box; 
-        }  
-        .ace_gutter-layer  { 
-            background:white
-        }
-
-        .output iframe {
-            border:none; 
-            box-sizing: border-box;
-            display: block; 
-            touch-action: none;
-            margin:0; 
-            width:100%; 
-            overflow-x:hidden; 
-            height:100%; 
-        }
-
-        .output .ss { 
-            position:absolute; 
-            top:0; 
-            bottom:0; 
-            left:0; 
-            right:0;
-            display:none; 
-        }
-    </style>
-</head> 
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Cinema Zone | Latest Movies Automatically</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0a; color: #fff; }
+    
+    /* Glass effect */
+    .glass { background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+    
+    header { display: flex; align-items: center; justify-content: space-between; padding: 15px 5%; flex-wrap: wrap; gap: 15px; background: #0f0f0f; }
+    .logo { font-size: 30px; font-weight: 900; background: linear-gradient(135deg, #e50914, #f5c518); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    nav a { color: #ccc; margin: 0 15px; text-decoration: none; font-size: 16px; transition: 0.3s; }
+    nav a:hover { color: #e50914; }
+    .featured { height: 75vh; background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 50px 5%; position: relative; margin-bottom: 30px; }
+    .featured::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #0a0a0a 0%, transparent 70%); }
+    .featured-content { position: relative; z-index: 2; max-width: 500px; }
+    .featured h2 { font-size: 36px; margin-bottom: 10px; }
+    .featured p { font-size: 16px; color: #ccc; margin-bottom: 20px; }
+    .btn { background: #e50914; border: none; color: white; padding: 12px 30px; border-radius: 50px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-block; }
+    .btn:hover { background: #b20710; transform: scale(1.05); }
+    .section-title { margin: 30px 5% 10px; font-size: 24px; border-left: 4px solid #e50914; padding-left: 15px; }
+    .scroll-row { display: flex; overflow-x: auto; gap: 15px; padding: 10px 5% 20px; scroll-behavior: smooth; }
+    .scroll-row::-webkit-scrollbar { height: 6px; background: #1a1a1a; border-radius: 6px; }
+    .scroll-row::-webkit-scrollbar-thumb { background: #e50914; border-radius: 6px; }
+    .movie-card { flex: 0 0 auto; width: 165px; background: #1e1e1e; border-radius: 15px; overflow: hidden; cursor: pointer; transition: 0.4s; position: relative; }
+    .movie-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(229,9,20,0.3); }
+    .movie-card img { width: 100%; height: 245px; object-fit: cover; display: block; }
+    .movie-info { padding: 10px; }
+    .movie-info h3 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f0f0f0; }
+    .rating { font-size: 13px; color: #f5c518; margin-top: 4px; }
+    .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: 0.3s; text-align: center; padding: 15px; }
+    .movie-card:hover .overlay { opacity: 1; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(6px); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-content { background: #1a1a1a; border-radius: 24px; max-width: 650px; width: 100%; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto; }
+    .close-btn { position: absolute; top: 15px; right: 20px; background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; }
+    .providers { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 15px; }
+    .provider-link { background: #2a2a2a; padding: 8px 16px; border-radius: 10px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: white; transition: 0.2s; border: 1px solid #444; }
+    .provider-link:hover { background: #e50914; border-color: #e50914; }
+    .provider-link img { width: 28px; border-radius: 5px; }
+    footer { text-align: center; padding: 30px; color: #666; border-top: 1px solid #222; margin-top: 40px; }
+    @media (max-width: 600px) { .movie-card { width: 130px; } .movie-card img { height: 190px; } .featured { height: 50vh; } }
+  </style>
+</head>
 <body>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js' ></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <header>
+    <div class="logo">Cinema Zone</div>
+    <nav>
+      <a href="#" onclick="document.getElementById('now-playing').scrollIntoView({behavior:'smooth'})">🎥 Now Playing</a>
+      <a href="#" onclick="document.getElementById('popular').scrollIntoView({behavior:'smooth'})">🔥 Popular</a>
+      <a href="#" onclick="document.getElementById('top-rated').scrollIntoView({behavior:'smooth'})">⭐ Top Rated</a>
+      <a href="#" onclick="document.getElementById('upcoming').scrollIntoView({behavior:'smooth'})">📅 Upcoming</a>
+    </nav>
+  </header>
 
-    <div class="Input"> 
-        <div id="editor" class='same' style="display:block"></div>
-    </div>   
+  <div id="featured" class="featured">
+    <div class="featured-content" id="featured-content"></div>
+  </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.min.js"> </script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script> 
+  <section id="now-playing">
+    <h2 class="section-title">🎬 Now Playing in Theaters</h2>
+    <div class="scroll-row" id="now-playing-row"></div>
+  </section>
 
-    <script>
-        var [iframe,main,dubbing ] = [document.createElement("iframe"),document.createElement("main"),document.createElement("div")]; 
-        iframe.setAttribute('style','display:block;');
-        main.classList = 'output same'; 
-        dubbing.classList = "ss"; 
-        main.append(iframe,dubbing); 
-        ss('.Input').after(main);
+  <section id="popular">
+    <h2 class="section-title">🔥 Most Popular</h2>
+    <div class="scroll-row" id="popular-row"></div>
+  </section>
 
-        function flow_load (theme) { 
-            var editor = ace.edit("editor");
-            editor.setTheme(theme); 
-            editor.session.setMode("ace/mode/html");
-        }    
+  <section id="top-rated">
+    <h2 class="section-title">⭐ Top Rated</h2>
+    <div class="scroll-row" id="top-rated-row"></div>
+  </section>
 
-        var editor = ace.edit("editor");
-        editor.setTheme("ace/theme/chrome");
-        editor.session.setMode("ace/mode/html"); 
-        var koli = editor;
+  <section id="upcoming">
+    <h2 class="section-title">📅 Coming Soon</h2>
+    <div class="scroll-row" id="upcoming-row"></div>
+  </section>
 
-        koli.setOptions({
-            cursorStyle:"smooth",
-            behavioursEnabled:true,
-            highlightGutterLine:true,
-            animatedScroll:true,
-            fontSize: "16px",
-            foldStyle:"markbegin",
-            showPrintMargin:0,
-            enableLiveAutocompletion:true,
-            enableBasicAutocompletion:true,
-        }); 
+  <div class="modal" id="movie-modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+      <div id="modal-inner"></div>
+    </div>
+  </div>
 
-        koli.commands.addCommand({ 
-            name: "input_full",
-            bindKey: {win: 'Ctrl-i',  mac: 'Command-i'}, 
-            exec: function(editor) {
-                var action = ss('.output'),ed = ss('#editor');
-                if(action.style.display == 'none'){
-                    action.style.display  = 'block'; 
-                    if(action.style.width.length > 0){ 
-                        ed.style.right = action.style.width 
-                    } else { 
-                        ed.style.right  = "20%";
-                    }
-                    flow_load (koli.getTheme())  
-                } else { 
-                    action.style.display  = 'none';  
-                    ed.style.right  = "0"; 
-                    flow_load (koli.getTheme())
-                }
-            },
-            readOnly: true 
-        });
+  <footer>© 2025 Cinema Zone | Movies updated automatically from TMDB | Streaming links to official platforms</footer>
 
-        koli.setValue(`<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n <meta name="viewport" content="width=device-width">\n <title>Shivam</title></head>
-            <body>\n\n\n\n  </body>\n</html>`);   
+  <script>
+    const API_KEY = '7bafd63b6228a93cc448a314c4131d79'; 
+       BASE_URL = 'https://api.themoviedb.org/3';
+    const IMG_BASE = 'https://image.tmdb.org/t/p/w500';
+    const REGION = 'EG'; // Egypt
 
-        var sesssin =  window.sessionStorage.getItem('backup');  
-        if(sesssin == null){
-            iframe.srcdoc = koli.getValue();
-        } else {
-            koli.setValue(sesssin);
-            iframe.srcdoc = sesssin;
-        }
+    async function fetchMovies(endpoint) {
+      const url = `${BASE_URL}/movie/${endpoint}?api_key=${API_KEY}&language=en-US&region=${REGION}&page=1`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.results || [];
+    }
 
-        koli.clearSelection() ;
-        koli.on('change',function(){ 
-            window.sessionStorage.setItem('backup',koli.getValue());
-            iframe.srcdoc = koli.getValue();
-        });  
-        
-        interact('.output').resizable({
-            edges: { left: true, right: false, bottom: false, top: false },
-            onstart: function (event) {ss('.ss').style.display = 'block'},
-            onend  : function (event) {ss('.ss').style.display = 'none'},
-            listeners: { 
-                move (event) { 
-                    var target = event.target
-                    var x = (parseFloat(target.getAttribute('data-x')) || 0)
-                    var y = (parseFloat(target.getAttribute('data-y')) || 0)
-                
-                    ss('#editor').style.right = event.rect.width+"px"; 
-                
-                    target.style.width = event.rect.width+"px"; 
-                    flow_load (koli.getTheme());
-                
-                    x += event.deltaRect.left; 
-                    target.style.transform = 'translate(' + x + 'px,' + y + 'px)'
-                    target.setAttribute('data-x', x) 
-                    target.setAttribute('data-y', y)
-                }
-            },
-            modifiers: [
-                interact.modifiers.restrictEdges({
-                    outer: 'parent'
-                }),
-                interact.modifiers.restrictSize({   
-                    min:{width:70},
-                    max:{width:1300}
-                })
-            ],
-            inertia: true
-        });
+    function renderRow(rowId, movies) {
+      const row = document.getElementById(rowId);
+      if (!row) return;
+      row.innerHTML = movies.map(m => {
+        const poster = m.poster_path ? IMG_BASE + m.poster_path : 'https://via.placeholder.com/300x450?text=No+Image';
+        const title = m.title || 'Untitled';
+        const rating = m.vote_average ? m.vote_average.toFixed(1) : '?';
+        return `
+          <div class="movie-card" onclick="openDetails(${m.id})">
+            <img src="${poster}" alt="${title}" loading="lazy">
+            <div class="overlay">
+              <p style="font-size:13px;">${m.overview ? m.overview.substring(0,80)+'...' : ''}</p>
+              <span class="btn">▶ Watch Now</span>
+            </div>
+            <div class="movie-info">
+              <h3 title="${title}">${title}</h3>
+              <div class="rating">⭐ ${rating}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
-        function ss(a){return document.querySelector(a)}
-        function all(x){return document.querySelectorAll(x)} 
-    </script>
+    async function renderFeatured(movie) {
+      const backdrop = movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : '';
+      document.getElementById('featured').style.backgroundImage = `url(${backdrop})`;
+      document.getElementById('featured-content').innerHTML = `
+        <h2>${movie.title}</h2>
+        <p>${(movie.overview || '').substring(0,180)}...</p>
+        <button class="btn" onclick="openDetails(${movie.id})">▶ Watch Now</button>
+      `;
+    }
+
+    async function loadAll() {
+      try {
+        const [now, pop, top, up] = await Promise.all([
+          fetchMovies('now_playing'),
+          fetchMovies('popular'),
+          fetchMovies('top_rated'),
+          fetchMovies('upcoming')
+        ]);
+        renderRow('now-playing-row', now);
+        renderRow('popular-row', pop);
+        renderRow('top-rated-row', top);
+        renderRow('upcoming-row', up);
+        const featured = now.length ? now[0] : pop[0];
+        if (featured) renderFeatured(featured);
+      } catch (e) {
+        alert('Please make sure you entered a valid TMDB API key.');
+      }
+    }
+
+    async function openDetails(movieId) {
+      document.getElementById('movie-modal').classList.add('active');
+      document.getElementById('modal-inner').innerHTML = '<p style="text-align:center">Loading...</p>';
+      const [details, providers] = await Promise.all([
+        fetch(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&language=en-US`).then(r => r.json()),
+        fetch(`${BASE_URL}/movie/${movieId}/watch/providers?api_key=${API_KEY}`).then(r => r.json())
+      ]);
+      const eg = providers.results && providers.results['EG'] ? providers.results['EG'] : null;
+      let providersHtml = '';
+      if (eg) {
+        const list = [...(eg.flatrate || []), ...(eg.rent || []), ...(eg.buy || [])];
+        const unique = list.filter((p,i,a) => a.findIndex(t => t.provider_id === p.provider_id) === i);
+        providersHtml = unique.map(p => {
+          let link = '#';
+          const name = p.provider_name.toLowerCase();
+          const titleEnc = encodeURIComponent(details.title || '');
+          if (name.includes('netflix')) link = `https://www.netflix.com/search?q=${titleEnc}`;
+          else if (name.includes('shahid')) link = `https://shahid.mbc.net/ar/search?q=${titleEnc}`;
+          else if (name.includes('osn')) link = `https://osn.com/ar-eg/search?q=${titleEnc}`;
+          else if (name.includes('apple')) link = `https://tv.apple.com/search?term=${titleEnc}`;
+          else link = `https://www.google.com/search?q=${titleEnc}+${name}+Egypt`;
+          return `<a href="${link}" target="_blank" class="provider-link">
+            <img src="https://image.tmdb.org/t/p/original${p.logo_path}" alt="${p.provider_name}" onerror="this.style.display='none'">
+            ${p.provider_name}
+          </a>`;
+        }).join('');
+      } else providersHtml = '<p style="color:#aaa">No streaming platforms available in Egypt at the moment.</p>';
+
+      document.getElementById('modal-inner').innerHTML = `
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+          <img src="${details.poster_path ? IMG_BASE+details.poster_path : 'https://via.placeholder.com/200x300'}" style="width:140px; border-radius:14px;">
+          <div style="flex:1">
+            <h2>${details.title}</h2>
+            <p>⭐ ${details.vote_average?.toFixed(1)} | ${details.runtime} min | ${details.release_date}</p>
+            <p style="margin:10px 0">${details.overview || ''}</p>
+            <div class="providers"><h4 style="width:100%">🎬 Watch on:</h4>${providersHtml}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function closeModal() {
+      document.getElementById('movie-modal').classList.remove('active');
+    }
+    window.onclick = e => { if (e.target === document.getElementById('movie-modal')) closeModal(); };
+
+    loadAll();
+  </script>
 </body>
 </html>
